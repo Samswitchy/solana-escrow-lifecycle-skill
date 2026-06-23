@@ -1,0 +1,67 @@
+---
+description: Enforce strict security validation for Solana escrow smart contracts (Anchor Rust programs)
+globs: "**/programs/**/*.rs, **/src/**/*.rs, **/contracts/**/*.rs"
+---
+# Solana Escrow Security Rules
+
+When writing, editing, or auditing Solana escrow smart contracts, you must strictly follow these security rules.
+
+## 1. Signer Verification
+- **Rule**: Every user action that deposits, confirms, cancels, or resolves an escrow must verify the caller's signature.
+- **Anchor pattern**: Use the `Signer<'info>` type for the executing account.
+- **Anti-pattern**: Relying on a regular `AccountInfo<'info>` without a `.is_signer` check in the instruction constraints.
+
+```rust
+// Correct
+#[derive(Accounts)]
+pub struct CreateEscrow<'info> {
+    #[account(mut)]
+    pub initializer: Signer<'info>,
+}
+```
+
+## 2. PDA Account Validation & Ownership
+- **Rule**: All program-derived address (PDA) accounts must use the `seeds` and `bump` constraints in Anchor to verify they are derived from correct parameters (e.g., `escrow_id`, `initializer`).
+- **Rule**: When referencing third-party accounts (like token mints, vault accounts, or global states), verify they are owned by the expected system program or protocol.
+- **Anchor pattern**:
+```rust
+#[account(
+    init,
+    payer = initializer,
+    space = EscrowState::INIT_SPACE,
+    seeds = [b"escrow", initializer.key().as_ref(), escrow_id.to_le_bytes().as_ref()],
+    bump
+)]
+pub escrow_state: Account<'info, EscrowState>,
+```
+
+## 3. Authority & Boundary Checks
+- **Rule**: Ensure only authorized participants can execute state changes.
+  - **Cancel**: Only the initializer (or designated depositor) can cancel, and only before acceptance/funding/expiration.
+  - **Confirm/Release**: Only the designated buyer/counterparty or dispute resolution arbiter can trigger releases.
+  - **Dispute Resolution**: Only the configured dispute engine/admin or multi-sig arbiter can resolve.
+- **Anchor pattern**: Use the `constraint` attribute or manual program error returns.
+```rust
+#[account(
+    mut,
+    constraint = escrow_state.initializer == initializer.key() @ EscrowError::InvalidInitializer
+)]
+pub escrow_state: Account<'info, EscrowState>,
+```
+
+## 4. Secure Token Transfers (CPIs)
+- **Rule**: Always transfer SPL tokens or Token-2022 tokens using Anchor's CPI wrappers (`token::transfer`, `token_2022::transfer`).
+- **Rule**: Ensure the vault token account is owned by a program PDA (the escrow state or a PDA signer) rather than an externally controlled key.
+- **Rule**: Validate that the destination token account's mint matches the escrow state's expected token mint.
+
+```rust
+let cpi_accounts = Transfer {
+    from: ctx.accounts.vault.to_account_info(),
+    to: ctx.accounts.destination.to_account_info(),
+    authority: ctx.accounts.escrow_state.to_account_info(), // PDA
+};
+```
+
+## 5. Checked Arithmetic & Clock Usage
+- **Rule**: Always perform calculations using checked math (`checked_add`, `checked_sub`, `checked_mul`, `checked_div`).
+- **Rule**: When validating time limits (e.g. escrow timeouts, payment windows, auto-cancellation), use `Clock::get()?.unix_timestamp`. Keep in mind that validators can manipulate the clock by a few seconds, so avoid relying on exact sub-second precision.
