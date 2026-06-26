@@ -94,7 +94,11 @@ it('rejects funding from non-designated counterparty', async () => {
       .fundPrivateEscrow()
       .accounts({
         funder: intruder.publicKey,
-        // ... rest of accounts
+        escrowState: escrowPda,
+        vault: vaultTokenAccount,
+        funderTokenAccount: intruderTokenAccount,
+        tokenMint,
+        tokenProgram: TOKEN_PROGRAM_ID,
       })
       .signers([intruder])
       .rpc();
@@ -102,7 +106,7 @@ it('rejects funding from non-designated counterparty', async () => {
     expect.fail("Should have failed to fund from random keypair");
   } catch (err: any) {
     // Assert specific error code from your program
-    expect(err.message).to.include("InvalidInitializer" || "ConstraintRaw");
+    expect(err.message).to.match(/InvalidInitializer|ConstraintRaw/);
   }
 });
 ```

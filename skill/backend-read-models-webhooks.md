@@ -30,20 +30,31 @@ Using `@solana/web3.js` to subscribe to log changes corresponding to the program
 import { Connection, PublicKey } from '@solana/web3.js';
 import * as anchor from '@coral-xyz/anchor';
 
-const connection = new Connection("https://api.mainnet-beta.solana.com", "confirmed");
-const programId = new PublicKey("YOUR_PROGRAM_ID");
+const connection = new Connection(process.env.SOLANA_RPC_URL!, "confirmed");
+const programId = new PublicKey(process.env.ESCROW_PROGRAM_ID!);
 
-// Instantiate Anchor Coder to parse logs
-const coder = new anchor.BorshInstructionCoder(idl);
+// Instantiate Anchor parser to decode emitted events
+const coder = new anchor.BorshCoder(idl);
+const parser = new anchor.EventParser(programId, coder);
+
+// Application-defined queue/upsert function used by the indexer worker.
+declare function enqueueEscrowEvent(event: {
+    signature: string;
+    slot: number;
+    name: string;
+    data: unknown;
+}): void;
 
 connection.onLogs(programId, (logs, ctx) => {
     if (logs.err) return; // Skip failed transactions
-    
-    for (const log of logs.logs) {
-        // Extract program logs and decode
-        if (log.includes("Program log: Instruction:")) {
-            // Read event traces ...
-        }
+
+    for (const event of parser.parseLogs(logs.logs)) {
+        enqueueEscrowEvent({
+            signature: logs.signature,
+            slot: ctx.slot,
+            name: event.name,
+            data: event.data,
+        });
     }
 }, "confirmed");
 ```

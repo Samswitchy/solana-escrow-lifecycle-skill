@@ -101,7 +101,7 @@ pub fn handler(ctx: Context<FundEscrow>) -> Result<()> {
         EscrowError::InvalidStateTransition
     );
     
-    // Execute deposit logic ...
+    transfer_tokens_into_vault(&ctx)?;
     escrow.state = EscrowState::Funded;
     Ok(())
 }

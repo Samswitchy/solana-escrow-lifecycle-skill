@@ -48,6 +48,6 @@ pub struct EscrowStateChanged {
 ```
 
 ## 4. Account Alignment and Size Allocation
-- **Rule**: Always allocate fixed-size accounts using Anchor's `#[account(init, payer = ..., space = EscrowState::INIT_SPACE)]`.
+- **Rule**: Always allocate fixed-size accounts using Anchor's `#[account(init, payer = ..., space = EscrowAccount::INIT_SPACE)]` or the concrete state account name used by the program.
 - **Rule**: Implement the `InitSpace` derive macro on all state structs. Avoid magic numbers for sizes.
 - **Rule**: Store dynamic metadata as hash references (`[u8; 32]`) or IPFS/Arweave URIs with a fixed length limit (e.g., `String` with max size constraint).

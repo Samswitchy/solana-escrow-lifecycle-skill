@@ -41,10 +41,29 @@ Provide Rust/Anchor boilerplate code containing the instructions and the account
 pub mod my_escrow_program {
     use super::*;
     
-    pub fn initialize_escrow(ctx: Context<InitializeEscrow>, escrow_id: u64, amount: u64) -> Result<()> {
-        // Init logic...
+    pub fn create_escrow(
+        ctx: Context<CreateEscrow>,
+        escrow_id: u64,
+        amount: u64,
+        expiry_at: i64,
+    ) -> Result<()> {
+        let escrow = &mut ctx.accounts.escrow;
+        escrow.escrow_id = escrow_id;
+        escrow.initializer = ctx.accounts.initializer.key();
+        escrow.amount = amount;
+        escrow.expiry_at = expiry_at;
+        escrow.state = EscrowState::Created;
+        escrow.bump = ctx.bumps.escrow;
         Ok(())
     }
-    // ...
+
+    pub fn accept_escrow(ctx: Context<AcceptEscrow>) -> Result<()> {
+        require!(
+            ctx.accounts.escrow.state == EscrowState::Created,
+            EscrowError::InvalidState
+        );
+        ctx.accounts.escrow.state = EscrowState::Accepted;
+        Ok(())
+    }
 }
 ```

@@ -51,8 +51,14 @@ export class EscrowServiceAdapter {
         escrowId: number;
         amount: number;
         counterparty: PublicKey;
+        metadataUri: string;
+        metadataHash: number[];
         expiryAt: number;
     }): Promise<TransactionInstruction> {
+        if (params.metadataHash.length !== 32) {
+            throw new Error('metadataHash must contain exactly 32 bytes');
+        }
+
         const [escrowStatePda] = PublicKey.findProgramAddressSync(
             [Buffer.from('escrow'), this.program.provider.publicKey.toBuffer(), new anchor.BN(params.escrowId).toArrayLike(Buffer, 'le', 8)],
             this.program.programId
@@ -66,8 +72,8 @@ export class EscrowServiceAdapter {
                 { intent: { standardEscrow: {} } },
                 params.counterparty,
                 new anchor.BN(params.amount),
-                Array(32).fill(0), // metadata reference hash
-                "ipfs://...",
+                params.metadataHash,
+                params.metadataUri,
                 new anchor.BN(params.expiryAt),
                 new anchor.BN(600) // confirmation window
             )
@@ -82,13 +88,19 @@ export class EscrowServiceAdapter {
     /**
      * Executes the funding workflow for an accepted escrow.
      */
-    public async fundEscrow(escrowId: number, tokenMint: PublicKey): Promise<string> {
-        // Build state & vault PDAs
-        // Run instructions methods...
+    public async fundEscrow(params: {
+        escrowState: PublicKey;
+        vault: PublicKey;
+        funderTokenAccount: PublicKey;
+        tokenMint: PublicKey;
+    }): Promise<string> {
         const txSig = await this.program.methods
             .fundPrivateEscrow()
             .accounts({
-                // Required accounts
+                escrowState: params.escrowState,
+                vault: params.vault,
+                funderTokenAccount: params.funderTokenAccount,
+                tokenMint: params.tokenMint,
             })
             .rpc();
 

@@ -13,7 +13,7 @@ Use this command when a developer has built an escrow Anchor program and needs t
 2. **Determine Accounts**: Map out the required PDA structures, signer accounts, mints, and token accounts.
 3. **Generate Setup Blocks**:
    - Write instructions to fund test wallets with SOL (airdrop).
-   - Write instructions to create dummy SPL token mints and mint initial tokens to the buyer/funder account.
+   - Write instructions to create local test SPL token mints and mint initial balances to the buyer/funder account.
 4. **Draft the Test Matrix**: Write distinct test cases covering:
    - **Happy Path**: Setup, Create, Accept, Fund, Confirm.
    - **Reclaim / Expiry**: Create, time-travel / trigger expiry, Cancel, claim refund.

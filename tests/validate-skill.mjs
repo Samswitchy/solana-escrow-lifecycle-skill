@@ -86,6 +86,8 @@ assert(readme.includes('## Problem'), 'README must explain the problem');
 assert(readme.includes('## Why It Is Novel'), 'README must explain novelty');
 assert(readme.includes('## Install'), 'README must document installation');
 assert(readme.includes('## Validate'), 'README must document validation');
+assert(readme.includes('actions/workflows/validate.yml/badge.svg'), 'README must include validation status badge');
+assert(readme.includes('License-MIT'), 'README must include MIT license badge');
 assert(!readme.includes('reference/solia_escrow'), 'README must not reference missing reference/solia_escrow');
 
 const privateExample = await read('examples/private-escrow-example.md');
@@ -119,7 +121,9 @@ for (const file of allMarkdownFiles) {
   const content = await read(file);
   assert(!content.includes('[0; 32]'), `${file} contains Rust-style [0; 32] outside Rust context`);
   assert(!content.includes("Account<'info, EscrowState>"), `${file} treats EscrowState enum as an account`);
+  assert(!content.includes('EscrowState::INIT_SPACE'), `${file} uses enum INIT_SPACE instead of an account INIT_SPACE`);
   assert(!content.includes('solia_escrow'), `${file} contains stale solia_escrow reference`);
+  assert(!content.includes('YOUR_'), `${file} contains placeholder YOUR_ text`);
 }
 
 if (failures.length > 0) {

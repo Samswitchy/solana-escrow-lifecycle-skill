@@ -4,6 +4,10 @@
   "description": "A Solana AI Kit skill for production-grade escrow lifecycle design, testing, and review.",
   "license": "MIT",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Samswitchy/solana-escrow-lifecycle-skill.git"
+  },
   "scripts": {
     "test": "node tests/validate-skill.mjs",
     "validate": "node tests/validate-skill.mjs"

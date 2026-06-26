@@ -1,5 +1,9 @@
 # Solana Escrow Lifecycle Skill
 
+[![Validate Skill](https://github.com/Samswitchy/solana-escrow-lifecycle-skill/actions/workflows/validate.yml/badge.svg)](https://github.com/Samswitchy/solana-escrow-lifecycle-skill/actions/workflows/validate.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Solana AI Kit Skill](https://img.shields.io/badge/Solana%20AI%20Kit-skill-14F195.svg)](https://github.com/solanabr/solana-ai-kit)
+
 A production-grade Solana AI Kit skill for designing, testing, and reviewing non-custodial escrow systems. It gives Claude Code, Codex, Cursor, and other coding agents a focused playbook for escrow lifecycle safety: state machines, SPL vault custody, dispute boundaries, backend indexing, frontend adapters, and integration test coverage.
 
 ## Problem
@@ -73,6 +77,8 @@ Install into a project-local Claude skill directory:
 ```bash
 bash install.sh --project /path/to/your/solana-project
 ```
+
+If no target directory is supplied, `--project` installs into the current working directory.
 
 This copies `skill/`, `agents/`, `commands/`, `rules/`, and `examples/` to:
 
