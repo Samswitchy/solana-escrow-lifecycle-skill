@@ -3,7 +3,7 @@
 This example details how to design marketplace escrows supporting partial fills, platform fee collection, and gasless relayer executions.
 
 ## User Scenario
-A Seller wants to list 10,000 SOLIA tokens for sale on a P2P marketplace.
+A Seller wants to list 10,000 project tokens for sale on a P2P marketplace.
 - **Partial Fills**: The seller allows buyers to buy portions of the listing (e.g., minimum 1,000 tokens per fill).
 - **Fees**: The platform takes a 0.5% (50 bps) protocol fee upon successful trade completion.
 - **Relayer**: To lower UX friction, the seller signs an off-chain permit letting a relayer submit the listing creation transaction gaslessly.
@@ -88,7 +88,9 @@ pub fn accept_trade_fill(ctx: Context<AcceptTradeFill>, fill_amount: u64) -> Res
     )?;
 
     // 4. Update state variables
-    listing.remaining_amount -= fill_amount;
+    listing.remaining_amount = listing.remaining_amount
+        .checked_sub(fill_amount)
+        .ok_or(EscrowError::MathOverflow)?;
     if listing.remaining_amount == 0 {
         listing.is_active = false;
     }

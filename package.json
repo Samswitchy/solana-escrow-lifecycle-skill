@@ -1,0 +1,23 @@
+{
+  "name": "solana-escrow-lifecycle-skill",
+  "version": "1.0.0",
+  "description": "A Solana AI Kit skill for production-grade escrow lifecycle design, testing, and review.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "test": "node tests/validate-skill.mjs",
+    "validate": "node tests/validate-skill.mjs"
+  },
+  "keywords": [
+    "solana",
+    "ai-skill",
+    "claude-code",
+    "codex",
+    "escrow",
+    "anchor",
+    "security"
+  ],
+  "engines": {
+    "node": ">=20"
+  }
+}

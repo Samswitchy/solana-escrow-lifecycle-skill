@@ -13,6 +13,18 @@ Alice wishes to buy a digital asset or perform a trade with Bob. They agree on a
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Token, TokenAccount};
 
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq, InitSpace)]
+pub enum EscrowState {
+    Created,
+    Accepted,
+    Funded,
+    Completed,
+    Cancelled,
+    Expired,
+    Disputed,
+    Resolved,
+}
+
 #[account]
 #[derive(InitSpace)]
 pub struct PrivateEscrowState {
@@ -21,14 +33,14 @@ pub struct PrivateEscrowState {
     pub counterparty: Pubkey, // Alice (Buyer)
     pub amount: u64,
     pub mint: Pubkey,
-    pub state: u8, // 0 = Created, 1 = Accepted, 2 = Funded, 3 = Completed
+    pub state: EscrowState,
     pub bump: u8,
 }
 ```
 
 ---
 
-## 2. Anchor Implementation Snippet (Create & Fund)
+## 2. Anchor Implementation Snippet (Create, Accept & Fund)
 
 ```rust
 pub fn create_escrow(
@@ -42,14 +54,39 @@ pub fn create_escrow(
     escrow.initializer = ctx.accounts.initializer.key();
     escrow.counterparty = counterparty;
     escrow.amount = amount;
-    escrow.state = 0; // Created
-    escrow.bump = *ctx.bumps.get("escrow_state").unwrap();
+    escrow.state = EscrowState::Created;
+    escrow.bump = ctx.bumps.escrow_state;
+    Ok(())
+}
+
+pub fn accept_escrow(ctx: Context<AcceptPrivateEscrow>) -> Result<()> {
+    let escrow = &mut ctx.accounts.escrow_state;
+
+    require!(escrow.state == EscrowState::Created, EscrowError::InvalidState);
+    require!(
+        escrow.counterparty == ctx.accounts.counterparty.key(),
+        EscrowError::InvalidCounterparty
+    );
+
+    escrow.state = EscrowState::Accepted;
     Ok(())
 }
 
 pub fn fund_escrow(ctx: Context<FundPrivateEscrow>) -> Result<()> {
     let escrow = &mut ctx.accounts.escrow_state;
-    require!(escrow.state == 0, EscrowError::InvalidState);
+    require!(escrow.state == EscrowState::Accepted, EscrowError::InvalidState);
+    require!(
+        escrow.counterparty == ctx.accounts.buyer.key(),
+        EscrowError::InvalidCounterparty
+    );
+    require!(
+        ctx.accounts.buyer_token_account.mint == escrow.mint,
+        EscrowError::InvalidMint
+    );
+    require!(
+        ctx.accounts.vault.mint == escrow.mint,
+        EscrowError::InvalidMint
+    );
 
     // Perform CPI transfer from buyer to vault
     let cpi_program = ctx.accounts.token_program.to_account_info();
@@ -61,7 +98,7 @@ pub fn fund_escrow(ctx: Context<FundPrivateEscrow>) -> Result<()> {
     let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
     anchor_spl::token::transfer(cpi_ctx, escrow.amount)?;
 
-    escrow.state = 2; // Funded
+    escrow.state = EscrowState::Funded;
     Ok(())
 }
 ```
@@ -80,6 +117,16 @@ const tx = await program.methods
     systemProgram: anchor.web3.SystemProgram.programId,
   })
   .signers([bobKeypair])
+  .rpc();
+
+// Accepting the escrow as Alice (Buyer)
+const acceptTx = await program.methods
+  .acceptEscrow()
+  .accounts({
+    counterparty: aliceKeypair.publicKey,
+    escrowState: escrowPda,
+  })
+  .signers([aliceKeypair])
   .rpc();
 
 // Funding the escrow as Alice (Buyer)

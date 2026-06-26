@@ -20,7 +20,7 @@ pub struct FundEscrow<'info> {
         seeds = [b"escrow", funder.key().as_ref(), escrow_id.to_le_bytes().as_ref()],
         bump = escrow_state.bump
     )]
-    pub escrow_state: Account<'info, EscrowState>,
+    pub escrow_state: Account<'info, EscrowAccount>,
 
     // Vault account initialized by the program, holding the escrowed tokens
     #[account(

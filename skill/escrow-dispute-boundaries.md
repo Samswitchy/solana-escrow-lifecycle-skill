@@ -35,7 +35,7 @@ pub struct ResolveEscrow<'info> {
         seeds = [b"escrow", escrow_state.initializer.as_ref(), escrow_state.escrow_id.to_le_bytes().as_ref()],
         bump = escrow_state.bump
     )]
-    pub escrow_state: Account<'info, EscrowState>,
+    pub escrow_state: Account<'info, EscrowAccount>,
 
     #[account(mut)]
     pub vault: Account<'info, TokenAccount>,
@@ -136,7 +136,7 @@ pub fn handle_resolution(ctx: Context<ResolveEscrow>, outcome: EscrowResolution)
                     },
                     signer_seeds,
                 ),
-                vault_amount - split,
+                vault_amount.checked_sub(split).ok_or(EscrowError::MathOverflow)?,
             )?;
         }
     }

@@ -30,17 +30,18 @@ Here is the canonical structure for an Escrow Adapter wrapping `@coral-xyz/ancho
 
 ```typescript
 import { Connection, PublicKey, TransactionInstruction } from '@solana/web3.js';
+import * as anchor from '@coral-xyz/anchor';
 import { Program, AnchorProvider, Wallet } from '@coral-xyz/anchor';
-import { SoliaEscrow, IDL } from './idl/solia_escrow';
+import { EscrowProgram, IDL } from './idl/escrow_program';
 
 export class EscrowServiceAdapter {
-    private program: Program<SoliaEscrow>;
+    private program: Program<EscrowProgram>;
 
     constructor(connection: Connection, wallet: Wallet, programId: PublicKey) {
         const provider = new AnchorProvider(connection, wallet, {
             preflightCommitment: 'confirmed',
         });
-        this.program = new Program<SoliaEscrow>(IDL, programId, provider);
+        this.program = new Program<EscrowProgram>(IDL, programId, provider);
     }
 
     /**
@@ -65,7 +66,7 @@ export class EscrowServiceAdapter {
                 { intent: { standardEscrow: {} } },
                 params.counterparty,
                 new anchor.BN(params.amount),
-                [0; 32], // dummy ref hash
+                Array(32).fill(0), // metadata reference hash
                 "ipfs://...",
                 new anchor.BN(params.expiryAt),
                 new anchor.BN(600) // confirmation window

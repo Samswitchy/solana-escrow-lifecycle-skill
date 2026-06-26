@@ -35,12 +35,12 @@ Example test suite skeleton using Anchor and Mocha:
 import * as anchor from '@coral-xyz/anchor';
 import { Program } from '@coral-xyz/anchor';
 import { expect } from 'chai';
-import { SoliaEscrow } from '../target/types/solia_escrow';
+import { EscrowProgram } from '../target/types/escrow_program';
 
-describe('solia-escrow-lifecycle', () => {
+describe('escrow-lifecycle', () => {
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
-  const program = anchor.workspace.SoliaEscrow as Program<SoliaEscrow>;
+  const program = anchor.workspace.EscrowProgram as Program<EscrowProgram>;
 
   let escrowId = new anchor.BN(Date.now());
   let initializer = provider.publicKey;
@@ -60,7 +60,7 @@ describe('solia-escrow-lifecycle', () => {
         { intent: { standardEscrow: {} } },
         counterparty,
         new anchor.BN(1_000_000), // amount
-        [0; 32], // ref hash
+        Array(32).fill(0), // ref hash
         "ipfs://metadata",
         new anchor.BN(Math.floor(Date.now() / 1000) + 3600), // 1hr expiry
         new anchor.BN(600)

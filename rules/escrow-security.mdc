@@ -32,7 +32,7 @@ pub struct CreateEscrow<'info> {
     seeds = [b"escrow", initializer.key().as_ref(), escrow_id.to_le_bytes().as_ref()],
     bump
 )]
-pub escrow_state: Account<'info, EscrowState>,
+pub escrow_state: Account<'info, EscrowAccount>,
 ```
 
 ## 3. Authority & Boundary Checks
@@ -46,7 +46,7 @@ pub escrow_state: Account<'info, EscrowState>,
     mut,
     constraint = escrow_state.initializer == initializer.key() @ EscrowError::InvalidInitializer
 )]
-pub escrow_state: Account<'info, EscrowState>,
+pub escrow_state: Account<'info, EscrowAccount>,
 ```
 
 ## 4. Secure Token Transfers (CPIs)

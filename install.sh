@@ -1,51 +1,78 @@
 #!/usr/bin/env bash
 
 # Solana Escrow Lifecycle Skill Installer
-# Configures the custom rules and references for Claude Code / Codex
+# Installs the complete skill bundle for Claude Code / Solana AI Kit usage.
 
-set -eo pipefail
+set -euo pipefail
 
-COLOR_GREEN='\033[0;32m'
-COLOR_BLUE='\033[0;34m'
-COLOR_YELLOW='\033[1;33m'
-COLOR_NC='\033[0m' # No Color
+SKILL_NAME="solana-escrow-lifecycle"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+MODE="${1:---project}"
+TARGET_ROOT="${2:-$(pwd)}"
 
-echo -e "${COLOR_BLUE}====================================================${COLOR_NC}"
-echo -e "${COLOR_GREEN}Installing Solana Escrow Lifecycle Skill...${COLOR_NC}"
-echo -e "${COLOR_BLUE}====================================================${COLOR_NC}"
+usage() {
+    cat <<'USAGE'
+Usage:
+  bash install.sh [--project [target-dir]]
+  bash install.sh --global
 
-TARGET_DIR="${1:-.}"
+Install locations:
+  --project  <target-dir>/.claude/skills/solana-escrow-lifecycle
+  --global   ~/.claude/skills/solana-escrow-lifecycle
 
-if [ ! -d "$TARGET_DIR" ]; then
-    echo -e "${COLOR_YELLOW}Target directory '$TARGET_DIR' does not exist. Creating it...${COLOR_NC}"
-    mkdir -p "$TARGET_DIR"
+The installer copies skill/, agents/, commands/, rules/, and examples/.
+USAGE
+}
+
+case "$MODE" in
+    --project)
+        INSTALL_DIR="$TARGET_ROOT/.claude/skills/$SKILL_NAME"
+        ;;
+    --global)
+        INSTALL_DIR="$HOME/.claude/skills/$SKILL_NAME"
+        ;;
+    -h|--help)
+        usage
+        exit 0
+        ;;
+    *)
+        echo "Unknown option: $MODE" >&2
+        usage >&2
+        exit 1
+        ;;
+esac
+
+required_dirs=(skill agents commands rules examples)
+
+for dir in "${required_dirs[@]}"; do
+    if [ ! -d "$SCRIPT_DIR/$dir" ]; then
+        echo "Missing required directory: $dir" >&2
+        exit 1
+    fi
+done
+
+mkdir -p "$INSTALL_DIR"
+
+for dir in "${required_dirs[@]}"; do
+    rm -rf "$INSTALL_DIR/$dir"
+    cp -R "$SCRIPT_DIR/$dir" "$INSTALL_DIR/$dir"
+done
+
+if [ -f "$SCRIPT_DIR/README.md" ]; then
+    cp "$SCRIPT_DIR/README.md" "$INSTALL_DIR/README.md"
 fi
 
-# Ensure rules and skill folders exist in the target
-mkdir -p "$TARGET_DIR/.claudecode/rules"
-mkdir -p "$TARGET_DIR/.cursor/rules"
-
-echo -e "Copying custom rules to target workspace..."
-
-# Copy security rule
-if [ -f "rules/escrow-security.mdc" ]; then
-    cp rules/escrow-security.mdc "$TARGET_DIR/.claudecode/rules/escrow-security.mdc"
-    cp rules/escrow-security.mdc "$TARGET_DIR/.cursor/rules/escrow-security.mdc"
-    echo -e "  - Copied escrow-security.mdc"
-else
-    echo -e "${COLOR_YELLOW}Warning: rules/escrow-security.mdc not found in current directory.${COLOR_NC}"
+if [ -f "$SCRIPT_DIR/LICENSE" ]; then
+    cp "$SCRIPT_DIR/LICENSE" "$INSTALL_DIR/LICENSE"
 fi
 
-# Copy design rule
-if [ -f "rules/escrow-design.mdc" ]; then
-    cp rules/escrow-design.mdc "$TARGET_DIR/.claudecode/rules/escrow-design.mdc"
-    cp rules/escrow-design.mdc "$TARGET_DIR/.cursor/rules/escrow-design.mdc"
-    echo -e "  - Copied escrow-design.mdc"
-else
-    echo -e "${COLOR_YELLOW}Warning: rules/escrow-design.mdc not found in current directory.${COLOR_NC}"
-fi
+cat <<EOF
+Installed $SKILL_NAME to:
+  $INSTALL_DIR
 
-echo -e "${COLOR_GREEN}Skill integration complete!${COLOR_NC}"
-echo -e "To use this skill with Claude Code, run:"
-echo -e "  ${COLOR_BLUE}claude add-skill $(pwd)/skill/SKILL.md${COLOR_NC}"
-echo -e "===================================================="
+Claude Code entry point:
+  $INSTALL_DIR/skill/SKILL.md
+
+Example:
+  claude add-skill "$INSTALL_DIR/skill/SKILL.md"
+EOF
